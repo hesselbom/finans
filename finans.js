@@ -28,7 +28,16 @@ finance.snapshot({
         chars: tableChars
     });
 
-    var q;
+    var q, maxDecimals = 2;
+
+    for (stock in stocks) {
+        q = stocks[stock];
+        var price = new Decimal(q.askRealtime),
+            decimals = Math.max(2, price.minus(Math.floor(q.askRealtime)).toString().length - 2);
+
+        if (decimals > maxDecimals)
+            maxDecimals = decimals;
+    }
 
     for (stock in stocks) {
         q = stocks[stock];
@@ -40,18 +49,23 @@ finance.snapshot({
             changeValStr = changeVal.toString(),
             decimals = Math.max(2, price.minus(Math.floor(q.askRealtime)).toString().length - 2),
             changeStr,
-            change;
+            change,
+            decimalPadding = '';
 
         changeVal = Math.round(changeVal * Math.pow(10, 4)) / Math.pow(10, 2);
         changeStr = changeVal.toFixed(2) + "%";
         change = changeStr;
+
+        for (var i = decimals; i < maxDecimals; i++) {
+            decimalPadding += ' ';
+        }
 
         if (parseFloat(q.changePercentRealtime) > 0)
             change = changeStr.green;
         else if (parseFloat(q.changePercentRealtime) < 0)
             change = changeStr.red;
 
-        table.push([exchange, symbol, name, price.toFixed(decimals), change]);
+        table.push([exchange, symbol, name, price.toFixed(decimals) + decimalPadding, change]);
     }
 
     console.log(table.toString());
