@@ -7,7 +7,8 @@ var finance = require('yahoo-finance'),
     minimist = require('minimist'),
     Decimal = require('decimal.js');
 
-var argv = minimist(process.argv.slice(2));
+var argv = minimist(process.argv.slice(2)),
+    myPrices = argv.myPrices ? argv.myPrices.split(',') : [];
 
 finance.snapshot({
     symbols: argv['_'][0].split(',')
@@ -17,14 +18,21 @@ finance.snapshot({
         return;
     }
 
-    var tableChars = {};
+    var tableChars = {},
+        head = ['Exchange', 'Symbol', 'Name', 'Price', 'Change'],
+        colAligns = [null, null, null, 'right', 'right'];
+
+    if (myPrices.length > 0) {
+        head.push('My Change');
+        colAligns.push('right');
+    }
 
     if (argv.style === 'compact')
         tableChars = {'mid': '', 'left-mid': '', 'mid-mid': '', 'right-mid': ''};
 
     var table = new Table({
-        head: ['Exchange', 'Symbol', 'Name', 'Price', 'Change'],
-        colAligns: [null, null, null, 'right', 'right'],
+        head: head,
+        colAligns: colAligns,
         chars: tableChars
     });
 
@@ -50,7 +58,15 @@ finance.snapshot({
             decimals = Math.max(2, price.minus(Math.floor(q.askRealtime)).toString().length - 2),
             changeStr,
             change,
-            decimalPadding = '';
+            decimalPadding = '',
+            myPrice = myPrices.length > stock ? new Decimal(myPrices[stock]) : null,
+            myChangePercent,
+            myChangePercentStr = '';
+
+        if (myPrice) {
+            myChangePercent = price.dividedBy(myPrice).minus(1).times(100);
+            myChangePercentStr = myChangePercent.toFixed(2).toString() + '%';
+        }
 
         changeVal = Math.round(changeVal * Math.pow(10, 4)) / Math.pow(10, 2);
         changeStr = changeVal.toFixed(2) + "%";
@@ -65,7 +81,18 @@ finance.snapshot({
         else if (parseFloat(q.changePercentRealtime) < 0)
             change = changeStr.red;
 
-        table.push([exchange, symbol, name, price.toFixed(decimals) + decimalPadding, change]);
+        if (parseFloat(myChangePercentStr) > 0)
+            myChangePercentStr = myChangePercentStr.green;
+        else if (parseFloat(myChangePercentStr) < 0)
+            myChangePercentStr = myChangePercentStr.red;
+
+        var rendered = [exchange, symbol, name, price.toFixed(decimals) + decimalPadding, change];
+
+        if (myPrices.length > 0) {
+            rendered.push(myChangePercentStr);
+        }
+
+        table.push(rendered);
     }
 
     console.log(table.toString());
