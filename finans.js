@@ -4,7 +4,8 @@ var finance = require('yahoo-finance'),
     Table = require('cli-table'),
     colors = require('colors'),
     util = require('util'),
-    minimist = require('minimist');
+    minimist = require('minimist'),
+    Decimal = require('decimal.js');
 
 var argv = minimist(process.argv.slice(2));
 
@@ -23,6 +24,7 @@ finance.snapshot({
 
     var table = new Table({
         head: ['Exchange', 'Symbol', 'Name', 'Price', 'Change'],
+        colAligns: [null, null, null, 'right', 'right'],
         chars: tableChars
     });
 
@@ -33,15 +35,15 @@ finance.snapshot({
         var exchange = q.stockExchange.grey,
             symbol = q.symbol.cyan,
             name = q.name.blue,
-            price = q.askRealtime,
+            price = new Decimal(q.askRealtime),
             changeVal = (typeof q.changePercentRealtime === 'string')? 0 : q.changePercentRealtime,
             changeValStr = changeVal.toString(),
-            decimals = changeValStr.substr(changeValStr.indexOf('.')).length - 1,
+            decimals = Math.max(2, price.minus(Math.floor(q.askRealtime)).toString().length - 2),
             changeStr,
             change;
 
-        changeVal = Math.round(changeVal * Math.pow(10, decimals)) / Math.pow(10, decimals - 2);
-        changeStr = changeVal + "%";
+        changeVal = Math.round(changeVal * Math.pow(10, 4)) / Math.pow(10, 2);
+        changeStr = changeVal.toFixed(2) + "%";
         change = changeStr;
 
         if (parseFloat(q.changePercentRealtime) > 0)
@@ -49,7 +51,7 @@ finance.snapshot({
         else if (parseFloat(q.changePercentRealtime) < 0)
             change = changeStr.red;
 
-        table.push([exchange, symbol, name, price, change]);
+        table.push([exchange, symbol, name, price.toFixed(decimals), change]);
     }
 
     console.log(table.toString());
