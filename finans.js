@@ -3,18 +3,27 @@
 var finance = require('yahoo-finance'),
     Table = require('cli-table'),
     colors = require('colors'),
-    util = require('util');
+    util = require('util'),
+    minimist = require('minimist');
+
+var argv = minimist(process.argv.slice(2));
 
 finance.snapshot({
-    symbols: process.argv[2].split(',')
+    symbols: argv['_'][0].split(',')
 }, function (err, stocks) {
     if (err) {
         console.log('Could not find a stock with that symbol.'.red);
         return;
     }
 
+    var tableChars = {};
+
+    if (argv.style === 'compact')
+        tableChars = {'mid': '', 'left-mid': '', 'mid-mid': '', 'right-mid': ''};
+
     var table = new Table({
-        head: ['Exchange', 'Symbol', 'Name', 'Price', 'Change']
+        head: ['Exchange', 'Symbol', 'Name', 'Price', 'Change'],
+        chars: tableChars
     });
 
     var q;
