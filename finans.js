@@ -36,9 +36,9 @@ finance.snapshot({
         change = changeStr;
 
         if (parseFloat(q.changePercentRealtime) > 0)
-            change = changeStr.bgGreen;
+            change = changeStr.green;
         else if (parseFloat(q.changePercentRealtime) < 0)
-            change = changeStr.bgRed;
+            change = changeStr.red;
 
         table.push([exchange, symbol, name, price, change]);
     }
