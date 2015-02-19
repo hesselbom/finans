@@ -33,7 +33,12 @@ finance.snapshot({
 
         changeVal = Math.round(changeVal * Math.pow(10, decimals)) / Math.pow(10, decimals - 2);
         changeStr = changeVal + "%";
-        change = (q.changePercentRealtime >= 0)? changeStr.bgGreen : changeStr.bgRed;
+        change = changeStr;
+
+        if (parseFloat(q.changePercentRealtime) > 0)
+            change = changeStr.bgGreen;
+        else if (parseFloat(q.changePercentRealtime) < 0)
+            change = changeStr.bgRed;
 
         table.push([exchange, symbol, name, price, change]);
     }
